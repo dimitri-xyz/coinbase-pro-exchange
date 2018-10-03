@@ -58,10 +58,11 @@ parseSocket conf market challenge = subscribe (apiType conf) market $ \conn -> d
 -- a more thorough test would be better.
 reencodeSocket :: ExchangeConf -> [ProductId] -> IO ()
 reencodeSocket conf market = subscribe (apiType conf) market $ \conn -> do
-    sequence_ $ replicate 1000 (decodeEncode conn)
+    sequence_ $ replicate 10 (decodeEncode conn)
 
 decodeEncode :: WS.Connection -> IO ()
 decodeEncode conn = do
+    setHeartbeat True conn
     ds <- WS.receiveData conn
     let res = eitherDecode ds
     case res :: Either String ExchangeMessage of
@@ -80,6 +81,7 @@ decodeEncode conn = do
 
 receiveAndDecode :: WS.Connection -> IO ()
 receiveAndDecode conn = do
+    setHeartbeat True conn
     ds <- WS.receiveData conn
     let res = eitherDecode {- $ trace (show ds) -} ds
     case res :: Either String ExchangeMessage of

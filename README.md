@@ -48,7 +48,7 @@ Set `COINBASE_PRO_SANDBOX` to `TRUE` to connect to the sandbox server, or to `FA
 
 Always test code on the sandbox server before running it on the live server.
 
-To make authenticated private API calls, users must provide their API key, secret, and passphrase. (To generate these credentials for a sandbox or live account, see the "API Keys" section of the account settings at, respectively, https://public.sandbox.pro.coinbase.com or https://pro.coinbase.com). Set the `COINBASE_PRO_KEY`, `COINBASE_PRO_SECRET` and `COINBASE_PRO_PASSPHRASE` appropriately:
+To make authenticated private API calls, users must provide their API key, secret, and passphrase. (To generate these credentials for a sandbox or live account, see the "API Keys" section of the account settings at, respectively, https://public.sandbox.pro.coinbase.com or https://pro.coinbase.com). Set the `COINBASE_PRO_KEY`, `COINBASE_PRO_SECRET` and `COINBASE_PRO_PASSPHRASE` appropriately, e.g., in ``bash``:
 
 ```bash
 > export COINBASE_PRO_KEY=<your API key>
@@ -58,10 +58,44 @@ To make authenticated private API calls, users must provide their API key, secre
 
 Provide credentials for the sandbox server if `COINBASE_PRO_SANDBOX` is set to `TRUE`, or credentials for the live server if it's set to `FALSE`.
 
-After setting these environment variables set, you can connect to Coinbase's sever.
+After setting these environment variables, you can use `configure` to produce an `ExchangeConf` value. In GHCi:
 
-TODO: Provide an example of basic usage.
+```haskell
+> conf <- configure
+```
 
+### REST API
+
+Use the `runExchange` action with this configuration to call the REST API. For example, to fetch the top of the order book for the BTC-USD market, run `getTopOfBook` with the appropriate product ID:
+
+```haskell
+> :set -XOverloadedStrings
+> runExchange conf $ getTopOfBook (ProductId "BTC-USD")
+```
+This call returns a value of type `Either ExchangeFailure (Book Aggregate)` in `IO`. Here the successful case of a `Right (Book {...})` provides an order book with order sizes aggregated by price.
+
+The `runExchange` action is a type-specialized version of the more general `runExchangeT` monad transformer, which allows the user to choose alternative types for representing errors, etc.
+
+### Websocket API
+
+To subscribe to streaming market data via the Websocket API, extract the `ApiType` from the `ExchangeConf` and pass it to `subscribe` along with the product IDs of the relevant markets and a Websocket `ClientApp` to consume received data:
+
+```haskell
+> :set -XOverloadedStrings
+> :set +m
+> import Data.ByteString
+> import Network.WebSockets
+> :{
+| subscribe (apiType conf) [ProductId "BTC-USD""] $ \conn ->
+|   forever $ do
+|     data <- receiveData conn
+|     print (data :: ByteString)
+| }:
+
+```
+
+See the documentation for the [`websockets` package](http://hackage.haskell.org/package/websockets) for details of working with Websockets.
+ 
 ## Related Projects
 
 This project continues development begun at [AndrewRademacher/coinbase-exchange])(https://github.com/AndrewRademacher/coinbase-exchange), which is no longer maintained. There is another Haskell client under current development at [mdunnio/coinbase-pro](https://github.com/mdunnio/coinbase-pro).

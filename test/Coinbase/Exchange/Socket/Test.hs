@@ -58,7 +58,7 @@ parseSocket conf market challenge = subscribe (apiType conf) market $ \conn -> d
 -- a more thorough test would be better.
 reencodeSocket :: ExchangeConf -> [ProductId] -> IO ()
 reencodeSocket conf market = subscribe (apiType conf) market $ \conn -> do
-    sequence_ $ replicate 10 (decodeEncode conn)
+    sequence_ $ replicate 1000 (decodeEncode conn)
 
 decodeEncode :: WS.Connection -> IO ()
 decodeEncode conn = do

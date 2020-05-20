@@ -48,7 +48,12 @@ instance FromJSON Account where
 --
 
 newtype EntryId = EntryId { unEntryId :: Word64 }
-    deriving (Eq, Ord, Num, Show, Read, Data, Typeable, Generic, NFData, Hashable, FromJSON, ToJSON)
+    deriving (Eq, Ord, Num, Show, Read, Data, Typeable, Generic, NFData, Hashable, ToJSON)
+
+instance FromJSON EntryId where
+    parseJSON (String t) = pure $ EntryId $ read $ T.unpack t
+    parseJSON (Number n) = pure $ EntryId $ floor n
+    parseJSON _          = mzero
 
 data Entry
     = Entry
